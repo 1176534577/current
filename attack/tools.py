@@ -318,7 +318,7 @@ def queryp(cs, data):
     return cs.fetchone()[0]
 
 
-async def ryjmain(abspath, big_cell, scale):
+def ryjmain(abspath, big_cell, scale):
     # print(f'我是{os.getppid()}的儿子{os.getpid()},数字是:{big_cell}')
     db = pymysql.connect(user='root', password='123456', database='ijg')
     cs = db.cursor()
@@ -340,23 +340,30 @@ async def ryjmain(abspath, big_cell, scale):
         # print('行列：', row, col)
         # res = ensure_solvable(iijj, mydict2list[:3000])
         # print(res)
-        await solver_small(abspath, row, col, iijj, mydict2list[:3000], jxyzdict)
+        solver_small(abspath, row, col, iijj, mydict2list[:3000], jxyzdict)
     else:
         # d = big_density_list[big_cell_list.index(big_cell)]
-        with open(abspath + r'\beforeee_model', 'a') as f:
-            for v in jxyzdict.values():
-                x, y, z = v
-                f.write(f'{x} {y} {z} {p}\n')
+        alist=[]
+        for v in jxyzdict.values():
+            alist.append(v)
+        return alist
+        # with open(abspath + r'\beforeee_model', 'a') as f:
+        #     for v in jxyzdict.values():
+        #         x, y, z = v
+        #         f.write(f'{x} {y} {z} {p}\n')
     cs.close()
     db.close()
 
 
-def asy(abspath, big_cell_s, scale):
-    # 协程
-    loop = asyncio.get_event_loop()
-    tasks = [ryjmain(abspath, big_cell, scale) for big_cell in big_cell_s]
-    loop.run_until_complete(asyncio.wait(tasks))
-    loop.close()
+# def asy(abspath, big_cell_s, scale):
+#     # 协程
+#     loop = asyncio.get_event_loop()
+#     tasks = [ryjmain(abspath, big_cell, scale) for big_cell in big_cell_s]
+#     loop.run_until_complete(asyncio.wait(tasks))
+#     loop.close()
+
+def io():
+    pass
 
 
 if __name__ == '__main__':
@@ -374,22 +381,27 @@ if __name__ == '__main__':
     p = Pool(cpu_count())
 
     # a = big_cell_list
-    big_cell_slist = []
-    bb = []
-    for index, aa in enumerate(big_cell_list):
-        if index == 0 or index % 4 != 0:
-            bb.append(aa)
-        else:
-            big_cell_slist.append(bb)
-            bb = [aa]
-        if index == len(big_cell_list) - 1:
-            big_cell_slist.append(bb)
+    # big_cell_slist = []
+    # bb = []
+    # for index, aa in enumerate(big_cell_list):
+    #     if index == 0 or index % 4 != 0:
+    #         bb.append(aa)
+    #     else:
+    #         big_cell_slist.append(bb)
+    #         bb = [aa]
+    #     if index == len(big_cell_list) - 1:
+    #         big_cell_slist.append(bb)
 
     # big_cell_list = [20, 21, 66,11,2,4,5]
+    a = []
     # 多线程
-    for big_cell_s in big_cell_slist:
-        p.apply_async(asy, args=(abspath, big_cell_s, scale))
+    for big_cell_s in big_cell_list:
+        p.apply_async(ryjmain, args=(abspath, big_cell_s, scale), callback=a.append) #todo 为什么写成a.extend会警告，在其他地方这样写不警告
     p.close()
     p.join()
+    print(a[:30])
+    # with open(abspath+r'\beforeee.txt','w') as f:
+    #     for i in a:
+    #         f.write(i)
     fin = time.time()
     print(f'间隔:{fin - st}')
