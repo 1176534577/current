@@ -30,20 +30,14 @@ def getG(abspath: str):
         theta = [0 for _ in range(100000)]
         phi = [0 for _ in range(100000)]
         alen = [0 for _ in range(100000)]
-        # d = [0 for _ in range(100000)]
         rx = [0 for _ in range(100000)]
         ry = [0 for _ in range(100000)]
         rz = [0 for _ in range(100000)]
-        size = 2500000
-        # bigsize = 5000000
-        # h = [0 for _ in range(size)]
+        size = 2500000 * 8
         xx = [0 for _ in range(size)]
         yy = [0 for _ in range(size)]
         zz = [0 for _ in range(size)]
         g = [0 for _ in range(size)]
-        # irow = [0 for _ in range(bigsize)]
-        # icol = [0 for _ in range(bigsize)]
-        # a = [0 for _ in range(bigsize)]
         xmin = ymin = zmin = 100000
         xmax = ymax = zmax = -100000
         irec = [0 for _ in range(int(ns))]
@@ -104,8 +98,8 @@ def getG(abspath: str):
         aset = set()
         for k in range(int(ns)):
             for ll in range(irec[k]):
-                # if i == 0:
-                #     pass
+                if i == 2989:
+                    pass
                 tot = 0
                 izst = floor((sz[k] - zmin) / delz + 1)  # math.floor向下取整
                 izfin = floor((rz[i] - zmin) / delz + 1)
@@ -370,7 +364,6 @@ def getG(abspath: str):
                                 else:
                                     dl = (yl - iyl * dely) / sin(phi[i])
                                     j = iyl * nx + kk - 1 + (kz - 1) * nxy
-                                    # h[j] = h[j] + 1
 
                                     xx[j] = kk - 1
                                     yy[j] = iyl
@@ -388,7 +381,6 @@ def getG(abspath: str):
                                         tot = tot + abs(dl) / sin(theta[i])
                                     dl = ((iyr + 1) * dely - yr) / sin(phi[i])
                                     jjj = iyr * nx + kk - 1 + (kz - 1) * nxy
-                                    # h[jjj] = h[jjj] + 1
 
                                     xx[jjj] = kk - 1
                                     yy[jjj] = iyr
@@ -399,9 +391,6 @@ def getG(abspath: str):
                 for j in range(m):
                     # try:
                     if g[j] > 0.0:
-                        # irow[nel] = i
-                        # icol[nel] = j
-                        # a[nel] = g[j]
                         nel = nel + 1
                         pij.write(f'{i + 1} {j + 1}\n')
                         pg.write(f'{g[j]}\n')
@@ -409,17 +398,9 @@ def getG(abspath: str):
                             aset.add(j)
                             pjxyz.write(f'{j + 1} {xx[j] + 1} {yy[j] + 1} {zz[j] + 1}\n')
                     g[j] = 0
-                    # print(a[nel])
-                    # except IndexError as e:
-                    #     logging.exception(e)
-                    #     print(j)
-                    # print(nel)
-                    # exit(2)
                 print(f'射线:{i}')
                 i += 1
             print(f'探测器:{k}已完成')
-                # for num in range(size):
-                #     g[num] = 0
         pnv.write(f"nel的大小为：{nel}\n")
 
 
