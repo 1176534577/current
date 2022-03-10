@@ -1,30 +1,26 @@
-import asyncio
 import logging
 import os
 import time
-import warnings
 from multiprocessing import Pool, cpu_count
 
 import pymysql
 from numpy.linalg import matrix_rank
 
-# from attack.setting import big_cell_list, big_cell_dict
 from attack.smallsolver import solver_small
 
-
-# logging.basicConfig(level=logging.DEBUG,  # 控制台打印的日志级别
-#                     filename=r'..\log\new.log',
-#                     filemode='a',  ##模式，有w和a，w就是写模式，每次都会重新写日志，覆盖之前的日志
-#                     # a是追加模式，默认如果不写的话，就是追加模式
-#                     format='%(asctime)s - %(pathname)s[line:%(lineno)d] - %(levelname)s: %(message)s'
-#                     # 日志格式
-#                     )
+logging.basicConfig(level=logging.DEBUG,  # 控制台打印的日志级别
+                    filename=r'..\log\new.log',
+                    filemode='w',  ##模式，有w和a，w就是写模式，每次都会重新写日志，覆盖之前的日志
+                    # a是追加模式，默认如果不写的话，就是追加模式
+                    format='%(message)s'
+                    # 日志格式
+                    )
 
 
 # logging.info("开始计算某一块")
 def getmylist():
     a = []
-    db = pymysql.connect(user='root', password='123456', database='ijg')
+    db = pymysql.connect(user='root', password='ryj1836127', database='nuclear')
     cs = db.cursor()
     sql = 'select j from jxyz'
     cs.execute(sql)
@@ -33,15 +29,6 @@ def getmylist():
     cs.close()
     db.close()
 
-    # yz = set()
-    # mydict = {}
-    # with open(abspath + r'\jxyz', 'r') as jxyz:
-    #     for jxyz_line in jxyz.readlines():
-    #         yz.add(int(jxyz_line.strip().split()[0]))
-    # a = list(yz)
-    # a.sort()
-    # for i in range(len(yz)):
-    #     mydict[a[i]] = i  # todo 用list代替dict是否更好
     return a
 
 
@@ -65,11 +52,11 @@ def getmylist():
 #     return ray_list
 
 
-def ij_G(cs, list_j, add: list):
+def ij_G(cs, list_j, small_row: int):
     """
     得到矩阵Ax=b中的A
 
-    :param add: 误差列
+    :param small_row: 误差列
     :param list_j: j的集合
     :return:
     """
@@ -78,42 +65,18 @@ def ij_G(cs, list_j, add: list):
     cs.execute(sql, (list_j,))
     for ijg in cs.fetchall():
         ray_sum.append(ijg)
-    # with open(abspath + r"\ij1", 'r') as ij, open(abspath + r"\G1", 'r') as g:
-    #     for ij_line, G_line in zip(ij.readlines(), g.readlines()):
-    #         ray_locate = ij_line.strip().split()
-    #         ray, locate = int(ray_locate[0]), int(ray_locate[1])
-    #         if locate in set_j:
-    #             G = float(G_line.strip())
-    #             ray_sum.append([ray, locate, G])
+
     rayset = set()
-    # locateset = set()
-    # raydict = dict()
     raylist = []
-    # locatedict = {}
-    # rayi = 0
-    # locatei = 0
     for ray in ray_sum:
         if ray[0] not in rayset:
-            # raydict[ray[0]] = rayi
             raylist.append(ray[0])
             rayset.add(ray[0])
-            # rayi += 1
-        # if ray[1] not in locateset:
-        #     locatedict[ray[1]] = locatei
-        #     locateset.add(ray[1])
-        #     locatei += 1
-    # list_j = list(list_j)
-    # list_j.sort()  # todo 这里去掉应该也可以,now,不可以,哎，好像又可以
-    # for seq, j in enumerate(list_j):
-    #     locatedict[j] = seq
-    print(f'穿过大格子包含的小格子的射线总数：{len(rayset)}')
-    g = [[0 for _ in range(len(list_j) + len(add))] for _ in range(len(add))]
+    # print(f'穿过大格子包含的小格子的射线总数：{len(rayset)}')
+    g = [[0 for _ in range(len(list_j))] for _ in range(small_row)]
 
     for mat in ray_sum:
-        # print(mat[0:2])
         g[raylist.index(mat[0])][list_j.index(mat[1])] = mat[2]
-    for i in range(len(add)):
-        g[i][len(list_j) + i] = add[i][0]
     return g
 
 
@@ -206,7 +169,7 @@ def get_density(abspath: str):
 #     return dict
 
 
-def get_small_cell(cs, scale: int, x, y, z):
+def get_small_cell(abspath, cs, scale: int, x, y, z):
     """
     大块中包含的小块，返回小块的位置和x,y,z坐标
 
@@ -215,7 +178,11 @@ def get_small_cell(cs, scale: int, x, y, z):
     """
     # x, y, z = need_dict[big_cell]
     jxyz_dict = {}
-    nx, ny, xz = 93, 44, 13  # todo 需要改
+    with open(abspath + r'\need_value1', 'r') as f:
+        f.readline()
+        nx, ny, nz = [int(i) for i in f.readline().strip().split()]  #todo 写到外面
+
+    # nx, ny, xz = 93, 44, 13  # todo 需要改
     print('大格子的坐标：', x, y, z)
     # 确定j的范围
     sxmin = scale * (x - 1) + 1
@@ -266,7 +233,7 @@ def ensure_solvable(a, addlist):
     return result
 
 
-def ray_d(cs, big_cell, density):
+def ray_d(cs, big_cell, density) -> list:
     """
     射线在某个大格子中的等效长度
 
@@ -279,7 +246,7 @@ def ray_d(cs, big_cell, density):
     for i in cs.fetchall():
         mylist.append([i[0] * density])
 
-    print(f'穿过第{big_cell}个大格子的射线总数：{len(mylist)}')
+    # print(f'穿过第{big_cell}个大格子的射线总数：{len(mylist)}')
     # cell_dict = big_cell_dict
     # todo len(big_density_list) - 1)是否多余
     # density = big_density_list[cell_dict.get(big_cell - 1, len(big_density_list) - 1)]
@@ -320,12 +287,12 @@ def queryp(cs, data):
 
 def ryjmain(abspath, big_cell, scale):
     # print(f'我是{os.getppid()}的儿子{os.getpid()},数字是:{big_cell}')
-    db = pymysql.connect(user='root', password='123456', database='ijg')
+    db = pymysql.connect(user='root', password='ryj1836127', database='nuclear')
     cs = db.cursor()
     x, y, z = queryxyz(cs, big_cell)
     isneed = judge_isneed(x, y)
     # 大格子包括的小格子
-    jxyzdict = get_small_cell(cs, scale, x, y, z)  # todo 分别写到if else里是否更合适，else只需要函数返回的第二项
+    jxyzdict = get_small_cell(abspath, cs, scale, x, y, z)  # todo 分别写到if else里是否更合适，else只需要函数返回的第二项
     p = queryp(cs, big_cell)
     if isneed:
         # print('大格子中包含的小格子有：', cell_set)
@@ -334,25 +301,28 @@ def ryjmain(abspath, big_cell, scale):
         mydict2list = ray_d(cs, big_cell, p)
         # print('222')
         # 得到矩阵A
-        iijj = ij_G(cs, list(jxyzdict.keys()), mydict2list)
-        row = len(iijj)
-        col = len(iijj[0])
-        # print('行列：', row, col)
+        row = len(mydict2list)
+        col = len(jxyzdict)
+        iijj = ij_G(cs, list(jxyzdict.keys()), row)
         # res = ensure_solvable(iijj, mydict2list[:3000])
-        # print(res)
-        solver_small(abspath, row, col, iijj, mydict2list[:3000], jxyzdict)
+        cs.close()
+        db.close()
+        return solver_small(abspath, row, col, iijj, mydict2list, jxyzdict)
     else:
         # d = big_density_list[big_cell_list.index(big_cell)]
-        alist=[]
+        alist = []
         for v in jxyzdict.values():
-            alist.append(v)
+            a = list(v)
+            a.append(p)
+            alist.append(a)
+        logging.info(alist)
+        cs.close()
+        db.close()
         return alist
         # with open(abspath + r'\beforeee_model', 'a') as f:
         #     for v in jxyzdict.values():
         #         x, y, z = v
         #         f.write(f'{x} {y} {z} {p}\n')
-    cs.close()
-    db.close()
 
 
 # def asy(abspath, big_cell_s, scale):
@@ -368,7 +338,7 @@ def io():
 
 if __name__ == '__main__':
     st = time.time()
-    scale = 2
+    scale = 4
     abspath = r'D:\Projects\fortran\python'
     print(f'我是他们的爸爸，我的pid: {os.getpid()}')
 
@@ -396,12 +366,12 @@ if __name__ == '__main__':
     a = []
     # 多线程
     for big_cell_s in big_cell_list:
-        p.apply_async(ryjmain, args=(abspath, big_cell_s, scale), callback=a.append) #todo 为什么写成a.extend会警告，在其他地方这样写不警告
+        p.apply_async(ryjmain, args=(abspath, big_cell_s, scale),
+                      callback=a.extend)  # todo 为什么写成a.extend会警告，在其他地方这样写不警告，噢，它不警告了
     p.close()
     p.join()
-    print(a[:30])
-    # with open(abspath+r'\beforeee.txt','w') as f:
-    #     for i in a:
-    #         f.write(i)
+    with open(abspath + r'\beforeee.txt', 'w') as f:
+        for i in a:
+            f.write(' '.join(map(str, i)) + '\n')
     fin = time.time()
     print(f'间隔:{fin - st}')
