@@ -13,7 +13,7 @@ def getG(abspath: str):
     # with open(abspath + r'\14_obs.dat', 'r') as f, open(abspath + r'\python\ij', 'w') as pij, open(
     #         abspath + r'\python\need_value', 'w') as pnv, open(abspath + r'\python\G', 'w') as pg, open(
     #     abspath + r'\python\d', 'w') as pd, open(abspath + r'\python\jxyz', 'w') as pjxyz,open(abspath+r'\python\mesh','w') as pm:
-    with open(abspath + r'\14_obs.dat', 'r') as f, open(abspath + r'\python\ij1', 'w') as pij, open(
+    with open(r'14_obs.dat', 'r') as f, open(abspath + r'\python\ij1', 'w') as pij, open(
             abspath + r'\python\need_value1', 'w') as pnv, open(abspath + r'\python\G1', 'w') as pg, open(
         abspath + r'\python\d1', 'w') as pd, open(abspath + r'\python\jxyz1', 'w') as pjxyz, open(
         abspath + r'\python\mesh1', 'w') as pm:
@@ -45,13 +45,13 @@ def getG(abspath: str):
             for j in range(int(nray[i])):
                 detid[i], a2, a3, a4, theta[k], phi[k], alen[k], extlmeas, er = [float(i) for i in
                                                                                  f.readline().strip().split()]
-                if er < 0.001:
-                    continue
+                # if er < 0.001:
+                #     continue
                 if phi[k] < 0:
                     phi[k] += 2 * pi
-                rx[k] = sx[i] + alen[k] * sin(theta[k]) * cos(phi[k])
-                ry[k] = sy[i] + alen[k] + sin(theta[k]) * sin(phi[k])
-                rz[k] = sz[i] + alen[k] * cos(theta[k])
+                rx[k] = sx[i] + alen[k] * cos(theta[k]) * cos(phi[k])
+                ry[k] = sy[i] + alen[k] + cos(theta[k]) * sin(phi[k])
+                rz[k] = sz[i] + alen[k] * sin(theta[k])
                 if alen[k] < 0.1:
                     continue
 
@@ -362,7 +362,7 @@ def getG(abspath: str):
                             aset.add(j)
                             pjxyz.write(f'{j + 1} {xx[j] + 1} {yy[j] + 1} {zz[j] + 1}\n')
                     g[j] = 0
-                print(f'射线:{i}')
+                # print(f'射线:{i}')
                 i += 1
             print(f'探测器:{k}已完成')
         pnv.write(f"nel的大小为：{nel}\n")
